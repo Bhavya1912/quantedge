@@ -8,7 +8,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-import json
 
 from api.optimizer import router as optimizer_router
 from api.greeks import router as greeks_router
@@ -17,7 +16,6 @@ from api.iv_analysis import router as iv_router
 from api.chain import router as chain_router
 from api.auth import router as auth_router
 from api.stress import router as stress_router
-from utils.config import settings
 from utils.logger import setup_logging
 from data.cache import cache
 
@@ -48,27 +46,12 @@ app = FastAPI(
 # Middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-def _parse_allowed_origins(val):
-    if isinstance(val, list):
-        return val
-    if not val or not str(val).strip():
-        return []
-    s = str(val).strip()
-    # If user provided a JSON array in the env, try to parse it
-    if s.startswith("["):
-        try:
-            parsed = json.loads(s)
-            if isinstance(parsed, list):
-                return parsed
-        except Exception:
-            pass
-    # Fallback to comma-separated string
-    return [o.strip() for o in s.split(",") if o.strip()]
-
-_allowed_origins = _parse_allowed_origins(settings.ALLOWED_ORIGINS)
-
 app.add_middleware(
     CORSMiddleware,
+    # Use wildcard origins to avoid deployment-time CORS origin drift (Vercel previews/custom domains).
+    # Authorization is sent via headers (Bearer token), so cookies are not required.
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_origins=_allowed_origins,
     # Allow Vercel preview/production URLs without requiring manual env updates each deploy
     allow_origin_regex=r"https://.*\.vercel\.app",
