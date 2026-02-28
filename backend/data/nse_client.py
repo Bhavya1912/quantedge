@@ -129,6 +129,11 @@ class NSEClient:
                 raw = resp.json()
                 parsed = self._parse_chain(raw, symbol)
 
+                if not parsed.get("chain"):
+                    logger.warning("NSE returned empty chain data — falling back to mock data.")
+                    from data.mock_data import get_mock_chain
+                    parsed = get_mock_chain(symbol)
+
                 # Cache for 60 seconds
                 await cache.set(cache_key, parsed, ttl=settings.CACHE_TTL_CHAIN)
                 return parsed
