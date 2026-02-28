@@ -2,26 +2,13 @@
 Application configuration via environment variables.
 """
 from typing import List
-from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
-
-    # App
-    ENVIRONMENT: str = "development"
-    DEBUG: bool = True
-    LOG_LEVEL: str = "INFO"
-
     # CORS
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://quantedge.in",
-        "https://quantedge.vercel.app",
-        "https://quantedge.in"
-    ]
+    # Store as a comma-separated string in environment variables (Render UI).
+    # Example: "http://localhost:5173,http://localhost:3000,https://quantedge.vercel.app"
+    ALLOWED_ORIGINS: str = (
+        "http://localhost:5173,http://localhost:3000,https://quantedge.vercel.app,https://quantedge.in"
+    )
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod

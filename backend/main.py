@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+import json
 
 from api.optimizer import router as optimizer_router
 from api.greeks import router as greeks_router
@@ -46,9 +47,29 @@ app = FastAPI(
 
 # Middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+def _parse_allowed_origins(val):
+    if isinstance(val, list):
+        return val
+    if not val or not str(val).strip():
+        return []
+    s = str(val).strip()
+    # If user provided a JSON array in the env, try to parse it
+    if s.startswith("["):
+        try:
+            parsed = json.loads(s)
+            if isinstance(parsed, list):
+                return parsed
+        except Exception:
+            pass
+    # Fallback to comma-separated string
+    return [o.strip() for o in s.split(",") if o.strip()]
+
+_allowed_origins = _parse_allowed_origins(settings.ALLOWED_ORIGINS)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
