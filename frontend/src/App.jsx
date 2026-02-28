@@ -13,7 +13,7 @@ import AlertsPage from './pages/AlertsPage'
 import useStore from './store'
 
 export default function App() {
-  const { runOptimize, fetchChain } = useStore()
+  const { fetchChain } = useStore()
 
   // Load initial data
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function App() {
       />
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<Navigate to="/roadmap" replace />} />
+          <Route index element={<Navigate to="/optimizer" replace />} />
           <Route path="roadmap" element={<RoadmapPage />} />
           <Route path="optimizer" element={<OptimizerPage />} />
           <Route path="chain" element={<ChainPage />} />
