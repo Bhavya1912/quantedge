@@ -62,3 +62,40 @@ async def test_fetch_option_chain_falls_back_to_mock_when_chain_empty(monkeypatc
 
     assert result.get("is_mock") is True
     assert len(result.get("chain", [])) > 0
+
+
+@pytest.mark.asyncio
+async def test_fetch_option_chain_ignores_empty_cached_chain(monkeypatch):
+    payload = {
+        "records": {
+            "underlyingValue": 0,
+            "expiryDates": [],
+            "data": [],
+        }
+    }
+
+    client = NSEClient()
+
+    async def _mock_refresh_cookies():
+        return None
+
+    async def _mock_get_client():
+        return _DummyClient(payload)
+
+    async def _mock_cache_get(_key):
+        return {"symbol": "BANKNIFTY", "chain": []}
+
+    async def _mock_cache_set(_key, _value, ttl=None):
+        return None
+
+    monkeypatch.setattr(client, "_refresh_cookies", _mock_refresh_cookies)
+    monkeypatch.setattr(client, "_get_client", _mock_get_client)
+
+    from data import nse_client as nse_client_module
+    monkeypatch.setattr(nse_client_module.cache, "get", _mock_cache_get)
+    monkeypatch.setattr(nse_client_module.cache, "set", _mock_cache_set)
+
+    result = await client.fetch_option_chain("BANKNIFTY")
+
+    assert result.get("is_mock") is True
+    assert len(result.get("chain", [])) > 0

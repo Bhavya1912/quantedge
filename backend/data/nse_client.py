@@ -107,7 +107,10 @@ class NSEClient:
         # Check cache
         cached = await cache.get(cache_key)
         if cached:
-            return cached
+            if not cached.get("chain"):
+                logger.warning("Cached option chain is empty; bypassing cache and refetching.")
+            else:
+                return cached
 
         await self._refresh_cookies()
 
