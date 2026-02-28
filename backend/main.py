@@ -5,9 +5,9 @@ FastAPI Application Entry Point
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import JSONResponse, Response
 
 from api.optimizer import router as optimizer_router
 from api.greeks import router as greeks_router
@@ -46,6 +46,24 @@ app = FastAPI(
 # Middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+
+@app.middleware("http")
+async def cors_preflight_middleware(request: Request, call_next):
+    """Handle CORS manually to avoid deployment origin drift issues."""
+    cors_headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+    }
+
+    if request.method == "OPTIONS":
+        return Response(status_code=200, headers=cors_headers)
+
+    response = await call_next(request)
+    for k, v in cors_headers.items():
+        response.headers[k] = v
+    return response
+
 app.add_middleware(
     CORSMiddleware,
     # Use wildcard origins to avoid deployment-time CORS origin drift (Vercel previews/custom domains).
@@ -80,6 +98,12 @@ async def health_check():
     }
 
 
+@app.get("/health", tags=["Health"])
+async def health_check_alias():
+    """Compatibility health endpoint."""
+    return await health_check()
+
+
 @app.get("/", tags=["Root"])
 async def root():
     return {
@@ -87,3 +111,13 @@ async def root():
         "docs": "/docs",
         "version": "1.0.0",
     }
+
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    """Ensure 404 responses also include CORS headers for browser diagnostics."""
+    return JSONResponse(
+        status_code=404,
+        content={"detail": "Not Found", "path": str(request.url.path)},
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
