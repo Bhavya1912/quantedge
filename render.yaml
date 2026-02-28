@@ -1,8 +1,7 @@
 services:
   - type: web
     name: quantedge-backend
-    runtime: python
-    pythonVersion: 3.11
+    runtime: python311
     buildCommand: pip install -r backend/requirements.txt
     startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
@@ -30,7 +29,6 @@ services:
     name: quantedge-redis
     runtime: redis
     plan: free
-    maxmemoryPolicy: allkeys-lru
 
   - type: pserv
     name: quantedge-postgres
