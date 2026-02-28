@@ -2,7 +2,6 @@ services:
   - type: web
     name: quantedge-backend
     runtime: docker
-    dockerfile: ./Dockerfile
     envVars:
       - key: ENVIRONMENT
         value: production
