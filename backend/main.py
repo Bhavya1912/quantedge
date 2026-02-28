@@ -70,6 +70,8 @@ _allowed_origins = _parse_allowed_origins(settings.ALLOWED_ORIGINS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
+    # Allow Vercel preview/production URLs without requiring manual env updates each deploy
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
