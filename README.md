@@ -125,6 +125,8 @@ POP = P(Sᵀ > BE) = 1 - Φ((ln(BE/S₀) - (μ-σ²/2)T) / (σ√T))
 
 ## Quick Start
 
+> **Python version requirement:** Use **Python 3.11** (recommended). Python 3.14 currently fails on some pinned dependencies (for example `pydantic-core==2.18.2`) because prebuilt wheels may be unavailable.
+
 ```bash
 # Clone and setup
 git clone https://github.com/yourorg/quantedge
@@ -146,6 +148,28 @@ docker-compose -f docker/docker-compose.yml up
 
 Visit `http://localhost:5173` for the app.
 API docs at `http://localhost:8000/docs`.
+
+### Windows note (PowerShell): `uvicorn` not recognized
+
+If PowerShell says `uvicorn` is not recognized, run backend commands through Python so they use your virtual environment packages. Also make sure you are creating the venv with **Python 3.11** (not 3.14):
+
+```powershell
+cd backend
+py -0p                        # list installed Python versions
+py -3.11 -m venv .venv        # create venv using Python 3.11
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m uvicorn main:app --reload --port 8000
+```
+
+If `py -3.11` fails, install Python 3.11 from python.org and rerun the steps.
+
+If activation is blocked by execution policy, run once in PowerShell (as your user):
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
 
 ---
 
