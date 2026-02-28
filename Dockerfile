@@ -18,4 +18,4 @@ COPY backend/ .
 ENV PYTHONUNBUFFERED=1
 
 # Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "$PORT"]
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT
