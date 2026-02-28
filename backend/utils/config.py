@@ -26,9 +26,11 @@ class Settings(BaseSettings):
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
     def parse_allowed_origins(cls, v):
-        """Parse comma-separated string or list."""
+        """Parse comma-separated string or list. Empty string becomes empty list."""
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
+            if not v.strip():
+                return []
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
 
     # Redis
