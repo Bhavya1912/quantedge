@@ -19,6 +19,8 @@ class Settings(BaseSettings):
         "http://localhost:5173",
         "http://localhost:3000",
         "https://quantedge.in",
+        "https://quantedge.vercel.app",
+        "https://quantedge.in"
     ]
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
@@ -39,7 +41,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost/quantedge"
 
     # JWT
-    JWT_SECRET: str = "change-this-in-production-use-256-bit-random-string"
+    JWT_SECRET: str = "change-me-in-production-use-openssl-rand-hex-16"  # Override in .env or env vars!
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 10080    # 7 days
 

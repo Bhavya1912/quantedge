@@ -13,7 +13,8 @@ services:
       - key: LOG_LEVEL
         value: INFO
       - key: ALLOWED_ORIGINS
-        value: https://your-frontend-url.vercel.app,https://quantedge.in
+        value: http://localhost:5173,http://localhost:3000,https://quantedge.vercel.app,https://quantedge.in
+        sync: false
       - key: JWT_SECRET
         sync: false
       - key: REDIS_URL
