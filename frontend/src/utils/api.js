@@ -5,7 +5,8 @@
  */
 import axios from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
+const configuredBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim()
+const BASE_URL = configuredBaseUrl || (import.meta.env.PROD ? 'https://quantedge-backend.onrender.com/api/v1' : '/api/v1')
 
 const api = axios.create({
   baseURL: BASE_URL,
