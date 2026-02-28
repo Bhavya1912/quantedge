@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # Store as a comma-separated string in environment variables (Render UI).
     # Example: "http://localhost:5173,http://localhost:3000,https://quantedge.vercel.app"
     ALLOWED_ORIGINS: str = (
-        "http://localhost:5173,http://localhost:3000,https://quantedge.vercel.app,https://quantedge.in"
+        "http://localhost:5173,http://localhost:3000,https://quantedge.vercel.app,https://quantedge-theta.vercel.app,https://quantedge.in"
     )
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
