@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: quantedge-backend
+    runtime: python
+    pythonVersion: 3.11
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: ALLOWED_ORIGINS
+        value: https://your-frontend-url.vercel.app,https://quantedge.in
+      - key: JWT_SECRET
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          name: quantedge-redis
+          property: connectionString
+      - key: DATABASE_URL
+        fromService:
+          name: quantedge-postgres
+          property: connectionString
+
+  - type: pserv
+    name: quantedge-redis
+    runtime: redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+
+  - type: pserv
+    name: quantedge-postgres
+    runtime: postgres
+    plan: free
+    ipAllowList: []
+    envVars:
+      - key: POSTGRES_DB
+        value: quantedge
+      - key: POSTGRES_USER
+        value: quantedge
+      - key: POSTGRES_PASSWORD
+        sync: false
