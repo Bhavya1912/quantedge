@@ -1,24 +1,42 @@
 """
 Application configuration via environment variables.
 """
-from typing import List
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """Application settings loaded from environment variables."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",
+    )
+
+    ENVIRONMENT: str = "development"
+    DEBUG: bool = False
+    LOG_LEVEL: str = "INFO"
+
     # CORS
     # Store as a comma-separated string in environment variables (Render UI).
     # Example: "http://localhost:5173,http://localhost:3000,https://quantedge.vercel.app"
     ALLOWED_ORIGINS: str = (
-        "http://localhost:5173,http://localhost:3000,https://quantedge.vercel.app,https://quantedge.in"
+        "http://localhost:5173,http://localhost:3000,https://quantedge.vercel.app,https://quantedge-theta.vercel.app,https://quantedge.in"
     )
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
-    def parse_allowed_origins(cls, v):
+    def parse_allowed_origins(cls, value):
         """Parse comma-separated string or list. Empty string becomes empty list."""
-        if isinstance(v, str):
-            if not v.strip():
-                return []
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+        if isinstance(value, str):
+            if not value.strip():
+                return ""
+            return ",".join(origin.strip() for origin in value.split(",") if origin.strip())
+        if isinstance(value, list):
+            return ",".join(origin.strip() for origin in value if str(origin).strip())
+        return value
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379"

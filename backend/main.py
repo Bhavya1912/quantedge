@@ -5,10 +5,9 @@ FastAPI Application Entry Point
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request
 from fastapi.middleware.gzip import GZipMiddleware
-import json
+from fastapi.responses import JSONResponse, Response
 
 from api.optimizer import router as optimizer_router
 from api.greeks import router as greeks_router
@@ -17,7 +16,6 @@ from api.iv_analysis import router as iv_router
 from api.chain import router as chain_router
 from api.auth import router as auth_router
 from api.stress import router as stress_router
-from utils.config import settings
 from utils.logger import setup_logging
 from data.cache import cache
 
@@ -48,32 +46,24 @@ app = FastAPI(
 # Middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-def _parse_allowed_origins(val):
-    if isinstance(val, list):
-        return val
-    if not val or not str(val).strip():
-        return []
-    s = str(val).strip()
-    # If user provided a JSON array in the env, try to parse it
-    if s.startswith("["):
-        try:
-            parsed = json.loads(s)
-            if isinstance(parsed, list):
-                return parsed
-        except Exception:
-            pass
-    # Fallback to comma-separated string
-    return [o.strip() for o in s.split(",") if o.strip()]
 
-_allowed_origins = _parse_allowed_origins(settings.ALLOWED_ORIGINS)
+@app.middleware("http")
+async def cors_preflight_middleware(request: Request, call_next):
+    """Handle CORS manually to avoid deployment origin drift issues."""
+    cors_headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+    }
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_allowed_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    if request.method == "OPTIONS":
+        return Response(status_code=200, headers=cors_headers)
+
+    response = await call_next(request)
+    for k, v in cors_headers.items():
+        response.headers[k] = v
+    return response
+
 
 # Routers
 app.include_router(auth_router,      prefix="/api/v1/auth",     tags=["Auth"])
@@ -95,6 +85,12 @@ async def health_check():
     }
 
 
+@app.get("/health", tags=["Health"])
+async def health_check_alias():
+    """Compatibility health endpoint."""
+    return await health_check()
+
+
 @app.get("/", tags=["Root"])
 async def root():
     return {
@@ -102,3 +98,13 @@ async def root():
         "docs": "/docs",
         "version": "1.0.0",
     }
+
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    """Ensure 404 responses also include CORS headers for browser diagnostics."""
+    return JSONResponse(
+        status_code=404,
+        content={"detail": "Not Found", "path": str(request.url.path)},
+        headers={"Access-Control-Allow-Origin": "*"},
+    )

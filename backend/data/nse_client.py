@@ -107,7 +107,10 @@ class NSEClient:
         # Check cache
         cached = await cache.get(cache_key)
         if cached:
-            return cached
+            if not cached.get("chain"):
+                logger.warning("Cached option chain is empty; bypassing cache and refetching.")
+            else:
+                return cached
 
         await self._refresh_cookies()
 
@@ -128,6 +131,11 @@ class NSEClient:
                 resp.raise_for_status()
                 raw = resp.json()
                 parsed = self._parse_chain(raw, symbol)
+
+                if not parsed.get("chain"):
+                    logger.warning("NSE returned empty chain data — falling back to mock data.")
+                    from data.mock_data import get_mock_chain
+                    parsed = get_mock_chain(symbol)
 
                 # Cache for 60 seconds
                 await cache.set(cache_key, parsed, ttl=settings.CACHE_TTL_CHAIN)
