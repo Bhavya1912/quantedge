@@ -64,6 +64,19 @@ async def cors_preflight_middleware(request: Request, call_next):
         response.headers[k] = v
     return response
 
+app.add_middleware(
+    CORSMiddleware,
+    # Use wildcard origins to avoid deployment-time CORS origin drift (Vercel previews/custom domains).
+    # Authorization is sent via headers (Bearer token), so cookies are not required.
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_origins=_allowed_origins,
+    # Allow Vercel preview/production URLs without requiring manual env updates each deploy
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Routers
 app.include_router(auth_router,      prefix="/api/v1/auth",     tags=["Auth"])
