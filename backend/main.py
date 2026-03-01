@@ -6,6 +6,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
 
@@ -45,6 +46,12 @@ app = FastAPI(
 
 # Middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
 
 
 @app.middleware("http")
@@ -78,7 +85,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers
+
+@app.options("/{full_path:path}")
+async def options_preflight(full_path: str):
+    """Explicit OPTIONS fallback for platforms/proxies that bypass middleware preflight handling."""
+    return Response(
+        status_code=204,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+            "Access-Control-Allow-Headers": "Authorization,Content-Type,Accept,Origin,X-Requested-With",
+        },
+    )
+
+
+# Versioned API routers
 app.include_router(auth_router,      prefix="/api/v1/auth",     tags=["Auth"])
 app.include_router(chain_router,     prefix="/api/v1/chain",    tags=["Option Chain"])
 app.include_router(optimizer_router, prefix="/api/v1/optimize", tags=["Optimizer"])
@@ -86,6 +107,15 @@ app.include_router(greeks_router,    prefix="/api/v1/greeks",   tags=["Greeks"])
 app.include_router(mc_router,        prefix="/api/v1/simulate", tags=["Monte Carlo"])
 app.include_router(iv_router,        prefix="/api/v1/iv",       tags=["IV Analysis"])
 app.include_router(stress_router,    prefix="/api/v1/stress",   tags=["Stress Test"])
+
+# Legacy/unversioned compatibility routes (helps if frontend base URL omits /api/v1)
+app.include_router(auth_router,      prefix="/auth",     tags=["Auth Legacy"])
+app.include_router(chain_router,     prefix="/chain",    tags=["Option Chain Legacy"])
+app.include_router(optimizer_router, prefix="/optimize", tags=["Optimizer Legacy"])
+app.include_router(greeks_router,    prefix="/greeks",   tags=["Greeks Legacy"])
+app.include_router(mc_router,        prefix="/simulate", tags=["Monte Carlo Legacy"])
+app.include_router(iv_router,        prefix="/iv",       tags=["IV Analysis Legacy"])
+app.include_router(stress_router,    prefix="/stress",   tags=["Stress Test Legacy"])
 
 
 @app.get("/api/v1/health", tags=["Health"])
