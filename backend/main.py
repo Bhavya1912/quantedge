@@ -5,10 +5,10 @@ FastAPI Application Entry Point
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 
 from api.optimizer import router as optimizer_router
 from api.greeks import router as greeks_router
@@ -99,6 +99,7 @@ async def health_check():
 
 @app.get("/health", tags=["Health"])
 async def health_check_alias():
+    """Compatibility health endpoint."""
     return await health_check()
 
 
@@ -109,3 +110,13 @@ async def root():
         "docs": "/docs",
         "version": "1.0.0",
     }
+
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    """Ensure 404 responses include CORS headers for browser diagnostics."""
+    return JSONResponse(
+        status_code=404,
+        content={"detail": "Not Found", "path": str(request.url.path)},
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
