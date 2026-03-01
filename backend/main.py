@@ -52,6 +52,37 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
+
+
+@app.middleware("http")
+async def cors_preflight_middleware(request: Request, call_next):
+    """Handle CORS manually to avoid deployment origin drift issues."""
+    cors_headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+    }
+
+    if request.method == "OPTIONS":
+        return Response(status_code=200, headers=cors_headers)
+
+    response = await call_next(request)
+    for k, v in cors_headers.items():
+        response.headers[k] = v
+    return response
+
+app.add_middleware(
+    CORSMiddleware,
+    # Use wildcard origins to avoid deployment-time CORS origin drift (Vercel previews/custom domains).
+    # Authorization is sent via headers (Bearer token), so cookies are not required.
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_origins=_allowed_origins,
+    # Allow Vercel preview/production URLs without requiring manual env updates each deploy
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -114,7 +145,7 @@ async def root():
 
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
-    """Ensure 404 responses include CORS headers for browser diagnostics."""
+    """Ensure 404 responses also include CORS headers for browser diagnostics."""
     return JSONResponse(
         status_code=404,
         content={"detail": "Not Found", "path": str(request.url.path)},
