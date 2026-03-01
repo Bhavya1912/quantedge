@@ -44,7 +44,7 @@ In Render Dashboard → **quantedge-backend** → **Environment**:
 Add these variables:
 ```
 JWT_SECRET = [paste the 32-char string from Step 2]
-ALLOWED_ORIGINS = https://quantedge.vercel.app,https://quantedge.in
+ALLOWED_ORIGINS = https://quantedge.vercel.app,https://quantedge-theta.vercel.app,https://quantedge.in
 ENVIRONMENT = production
 DEBUG = false
 ```
